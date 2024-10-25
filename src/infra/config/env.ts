@@ -5,6 +5,9 @@ const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   PORT: z.coerce.number().default(3333),
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string(),
+  GOOGLE_PRIVATE_KEY: z.string(),
+  GOOGLE_SHEET_ID: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
