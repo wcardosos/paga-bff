@@ -1,12 +1,10 @@
 import { ReferenceMonth } from '@/app/entities/reference-month';
-import { BudgetRepository } from '@/app/repositories/budget.repository';
 import { FetchReferenceMonths } from '@/app/services/budget/fetch-reference-months';
+import { makeBudgetRepository } from 'tests/factories/budget';
 import { Mock } from 'vitest';
 
 describe('FetchReferenceMonths', () => {
-  const budgetRepository = {
-    getReferenceMonths: vi.fn(),
-  } as BudgetRepository;
+  const budgetRepository = makeBudgetRepository();
 
   describe('execute', () => {
     it('should return a ReferenceMonth', async () => {
