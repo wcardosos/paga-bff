@@ -7,6 +7,11 @@ import { ReferenceMonth } from '@/app/entities/reference-month';
 import { BudgetRepository } from '@/app/repositories/budget.repository';
 import { google, sheets_v4 } from 'googleapis';
 import { env } from '@/infra/config/env';
+import {
+  Expense,
+  ExpenseCategory,
+  ExpenseStatus,
+} from '@/app/entities/expense';
 
 export class GoogleSheetsBudgetRepository implements BudgetRepository {
   private readonly sheetsConnection: sheets_v4.Sheets;
@@ -75,6 +80,30 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     if (!summaryValues) return null;
 
     return BudgetSummary.create(summaryValues);
+  }
+
+  async getExpenses(referenceMonth: ReferenceMonth): Promise<Expense[]> {
+    const descriptionsResponse =
+      await this.sheetsConnection.spreadsheets.values.get({
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+        range: `${referenceMonth.value}!D2:I`,
+      });
+
+    const { values } = descriptionsResponse.data;
+
+    const expenses = values?.map(
+      ([description, amount, dueDay, status, category]) => {
+        return Expense.create({
+          description: description as string,
+          amount: amount ? parseFloat(amount.replace(',', '.')) : 0,
+          dueDay: Number(dueDay) || null,
+          status: (status as ExpenseStatus) || null,
+          category: (category as ExpenseCategory) || null,
+        });
+      },
+    );
+
+    return expenses || [];
   }
 
   private async getSpreadsheet() {
