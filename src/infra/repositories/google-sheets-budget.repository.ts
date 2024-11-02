@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable camelcase */
 import {
   BudgetSummary,
@@ -12,6 +13,8 @@ import {
   ExpenseCategory,
   ExpenseStatus,
 } from '@/app/entities/expense';
+import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
+import { UnmappedError } from '@/app/errors/unmapped';
 
 export class GoogleSheetsBudgetRepository implements BudgetRepository {
   private readonly sheetsConnection: sheets_v4.Sheets;
@@ -50,36 +53,48 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
   async getSummary(
     referenceMonth: ReferenceMonth,
   ): Promise<BudgetSummary | null> {
-    const response = await this.sheetsConnection.spreadsheets.values.get({
-      spreadsheetId: env.GOOGLE_SHEET_ID,
-      range: `${referenceMonth.value}!B1:B6`,
-    });
+    try {
+      const response = await this.sheetsConnection.spreadsheets.values.get({
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+        range: `${referenceMonth.value}!B1:B6`,
+      });
 
-    const { values } = response.data;
+      const { values } = response.data;
 
-    if (!values) return null;
+      if (!values) return null;
 
-    const [
-      rawIncome,
-      rawExpenses,
-      rawBalance,
-      rawUnpaid,
-      rawPaid,
-      rawSeparated,
-    ] = values.flat();
+      const [
+        rawIncome,
+        rawExpenses,
+        rawBalance,
+        rawUnpaid,
+        rawPaid,
+        rawSeparated,
+      ] = values.flat();
 
-    const summaryValues = this.normalizeValues(
-      rawIncome,
-      rawExpenses,
-      rawBalance,
-      rawPaid,
-      rawUnpaid,
-      rawSeparated,
-    );
+      const summaryValues = this.normalizeValues(
+        rawIncome,
+        rawExpenses,
+        rawBalance,
+        rawPaid,
+        rawUnpaid,
+        rawSeparated,
+      );
 
-    if (!summaryValues) return null;
+      if (!summaryValues) return null;
 
-    return BudgetSummary.create(summaryValues);
+      return BudgetSummary.create(summaryValues);
+    } catch (error: any) {
+      const errorType = this.parseErrorMessage(
+        error.response?.data?.error?.message,
+      );
+
+      if (errorType === 'RANGE_NOT_FOUND') {
+        throw new ResourceNotFoundError('Summary');
+      } else {
+        throw new UnmappedError(error);
+      }
+    }
   }
 
   async getExpenses(referenceMonth: ReferenceMonth): Promise<Expense[]> {
@@ -141,5 +156,13 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
       unpaid: rawUnpaid ? parseFloat(rawUnpaid.replace(',', '.')) : 0,
       separated: rawSeparated ? parseFloat(rawSeparated.replace(',', '.')) : 0,
     };
+  }
+
+  private parseErrorMessage(errorMessage: string): 'RANGE_NOT_FOUND' | null {
+    if (!errorMessage) return null;
+
+    return /Unable to parse range:/.test(errorMessage)
+      ? 'RANGE_NOT_FOUND'
+      : null;
   }
 }

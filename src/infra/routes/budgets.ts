@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FetchReferenceMonths } from '@/app/services/budget/fetch-reference-months';
 import { GoogleSheetsBudgetRepository } from '../repositories/google-sheets-budget.repository';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FetchBudgetSummary } from '@/app/services/budget/fetch-budget-summary';
 import { FetchBudgetExpenses } from '@/app/services/budget/fetch-budget-expenses';
+import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
 
 export function budgetsRoutes(app: FastifyInstance) {
   const budgetRepository = new GoogleSheetsBudgetRepository();
@@ -26,7 +28,17 @@ export function budgetsRoutes(app: FastifyInstance) {
 
       const fetchBudgetSummary = new FetchBudgetSummary(budgetRepository);
 
-      return fetchBudgetSummary.execute(referenceMonth);
+      try {
+        const budgetSummary = await fetchBudgetSummary.execute(referenceMonth);
+
+        return budgetSummary.map();
+      } catch (error: any) {
+        if (error instanceof ResourceNotFoundError) {
+          return reply.status(404).send(error.message);
+        } else {
+          return reply.status(500).send(error.message);
+        }
+      }
     },
   );
 
