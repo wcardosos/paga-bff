@@ -19,6 +19,18 @@ import { UnmappedError } from '@/app/errors/unmapped';
 export class GoogleSheetsBudgetRepository implements BudgetRepository {
   private readonly sheetsConnection: sheets_v4.Sheets;
 
+  private readonly EXPENSE_STATUS_MAPPING: Record<string, ExpenseStatus> = {
+    Pago: 'paid',
+    'Não pago': 'unpaid',
+    Separado: 'separated',
+  };
+
+  private readonly EXPENSE_CATEGORY_MAPPING: Record<string, ExpenseCategory> = {
+    Lazer: 'leisure',
+    Essencial: 'essential',
+    Investimentos: 'investments',
+  };
+
   constructor() {
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -53,56 +65,41 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
   async getSummary(
     referenceMonth: ReferenceMonth,
   ): Promise<BudgetSummary | null> {
-    try {
-      const response = await this.sheetsConnection.spreadsheets.values.get({
-        spreadsheetId: env.GOOGLE_SHEET_ID,
-        range: `${referenceMonth.value}!B1:B6`,
-      });
+    const response = await this.fetchValuesFromRange(
+      `${referenceMonth.value}!B1:B6`,
+    );
 
-      const { values } = response.data;
+    const { values } = response.data;
 
-      if (!values) return null;
+    if (!values) return null;
 
-      const [
-        rawIncome,
-        rawExpenses,
-        rawBalance,
-        rawUnpaid,
-        rawPaid,
-        rawSeparated,
-      ] = values.flat();
+    const [
+      rawIncome,
+      rawExpenses,
+      rawBalance,
+      rawUnpaid,
+      rawPaid,
+      rawSeparated,
+    ] = values.flat();
 
-      const summaryValues = this.normalizeValues(
-        rawIncome,
-        rawExpenses,
-        rawBalance,
-        rawPaid,
-        rawUnpaid,
-        rawSeparated,
-      );
+    const summaryValues = this.normalizeValues(
+      rawIncome,
+      rawExpenses,
+      rawBalance,
+      rawPaid,
+      rawUnpaid,
+      rawSeparated,
+    );
 
-      if (!summaryValues) return null;
+    if (!summaryValues) return null;
 
-      return BudgetSummary.create(summaryValues);
-    } catch (error: any) {
-      const errorType = this.parseErrorMessage(
-        error.response?.data?.error?.message,
-      );
-
-      if (errorType === 'RANGE_NOT_FOUND') {
-        throw new ResourceNotFoundError('Summary');
-      } else {
-        throw new UnmappedError(error);
-      }
-    }
+    return BudgetSummary.create(summaryValues);
   }
 
   async getExpenses(referenceMonth: ReferenceMonth): Promise<Expense[]> {
-    const descriptionsResponse =
-      await this.sheetsConnection.spreadsheets.values.get({
-        spreadsheetId: env.GOOGLE_SHEET_ID,
-        range: `${referenceMonth.value}!D2:I`,
-      });
+    const descriptionsResponse = await this.fetchValuesFromRange(
+      `${referenceMonth.value}!D2:I`,
+    );
 
     const { values } = descriptionsResponse.data;
 
@@ -112,8 +109,8 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
           description: description as string,
           amount: amount ? parseFloat(amount.replace(',', '.')) : 0,
           dueDay: Number(dueDay) || null,
-          status: (status as ExpenseStatus) || null,
-          category: (category as ExpenseCategory) || null,
+          status: this.parseStatus(status),
+          category: this.parseCategory(category),
         });
       },
     );
@@ -127,6 +124,25 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     });
 
     return response.data;
+  }
+
+  private async fetchValuesFromRange(range: string) {
+    try {
+      return await this.sheetsConnection.spreadsheets.values.get({
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+        range,
+      });
+    } catch (error: any) {
+      const errorType = this.parseErrorMessage(
+        error.response?.data?.error?.message,
+      );
+
+      if (errorType === 'RANGE_NOT_FOUND') {
+        throw new ResourceNotFoundError('Summary');
+      } else {
+        throw new UnmappedError(error);
+      }
+    }
   }
 
   private normalizeValues(
@@ -156,6 +172,14 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
       unpaid: rawUnpaid ? parseFloat(rawUnpaid.replace(',', '.')) : 0,
       separated: rawSeparated ? parseFloat(rawSeparated.replace(',', '.')) : 0,
     };
+  }
+
+  private parseStatus(status: string): ExpenseStatus | null {
+    return this.EXPENSE_STATUS_MAPPING[status] || null;
+  }
+
+  private parseCategory(category: string): ExpenseCategory | null {
+    return this.EXPENSE_CATEGORY_MAPPING[category] || null;
   }
 
   private parseErrorMessage(errorMessage: string): 'RANGE_NOT_FOUND' | null {

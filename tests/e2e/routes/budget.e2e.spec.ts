@@ -5,6 +5,7 @@ import { makeBudgetSummary } from 'tests/factories/budget-summary';
 import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
 import { UnmappedError } from '@/app/errors/unmapped';
 import request from 'supertest';
+import { makeExpense } from 'tests/factories/expense';
 
 describe('/budgets', () => {
   beforeEach(() => {
@@ -74,6 +75,59 @@ describe('/budgets', () => {
 
       const response = await request(app.server).get(
         '/budgets/summary?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.text).toBe('Unmapped error: Error');
+    });
+  });
+
+  describe('[GET] /expenses', () => {
+    const getExpensesSpy = vi.spyOn(
+      GoogleSheetsBudgetRepository.prototype,
+      'getExpenses',
+    );
+
+    test('return status 400 when referenceMonth is not provided', async () => {
+      const response = await request(app.server).get('/budgets/expenses');
+
+      expect(response.status).toBe(400);
+      expect(response.text).toBe('Reference month must be provided');
+    });
+
+    test('should return expenses', async () => {
+      const expenses = [makeExpense(), makeExpense(), makeExpense()];
+
+      getExpensesSpy.mockResolvedValueOnce(expenses);
+
+      const response = await request(app.server).get(
+        '/budgets/expenses?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toStrictEqual(
+        expenses.map((expense) => expense.map()),
+      );
+    });
+
+    test('should return 404 when repository not found expenses', async () => {
+      getExpensesSpy.mockRejectedValueOnce(
+        new ResourceNotFoundError('Expenses'),
+      );
+
+      const response = await request(app.server).get(
+        '/budgets/expenses?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.text).toBe('Expenses not found');
+    });
+
+    test('should return 500 when unmapped error is thrown', async () => {
+      getExpensesSpy.mockRejectedValueOnce(new UnmappedError(new Error()));
+
+      const response = await request(app.server).get(
+        '/budgets/expenses?referenceMonth=11/24',
       );
 
       expect(response.status).toBe(500);
