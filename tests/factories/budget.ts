@@ -5,5 +5,6 @@ export function makeBudgetRepository() {
     getReferenceMonths: vi.fn(),
     getSummary: vi.fn(),
     getExpenses: vi.fn(),
+    getGoals: vi.fn(),
   } as BudgetRepository;
 }

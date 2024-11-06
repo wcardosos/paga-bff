@@ -6,6 +6,7 @@ import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
 import { UnmappedError } from '@/app/errors/unmapped';
 import request from 'supertest';
 import { makeExpense } from 'tests/factories/expense';
+import { makeGoal } from 'tests/factories/goal';
 
 describe('/budgets', () => {
   beforeEach(() => {
@@ -128,6 +129,55 @@ describe('/budgets', () => {
 
       const response = await request(app.server).get(
         '/budgets/expenses?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.text).toBe('Unmapped error: Error');
+    });
+  });
+
+  describe('[GET] /goals', () => {
+    const getGoalsSpy = vi.spyOn(
+      GoogleSheetsBudgetRepository.prototype,
+      'getGoals',
+    );
+
+    test('return status 400 when referenceMonth is not provided', async () => {
+      const response = await request(app.server).get('/budgets/goals');
+
+      expect(response.status).toBe(400);
+      expect(response.text).toBe('Reference month must be provided');
+    });
+
+    test('should return goals', async () => {
+      const goals = [makeGoal(), makeGoal(), makeGoal()];
+
+      getGoalsSpy.mockResolvedValueOnce(goals);
+
+      const response = await request(app.server).get(
+        '/budgets/goals?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toStrictEqual(goals.map((goal) => goal.map()));
+    });
+
+    test('should return 404 when repository not found goals', async () => {
+      getGoalsSpy.mockRejectedValueOnce(new ResourceNotFoundError('Goals'));
+
+      const response = await request(app.server).get(
+        '/budgets/goals?referenceMonth=11/24',
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.text).toBe('Goals not found');
+    });
+
+    test('should return 500 when unmapped error is thrown', async () => {
+      getGoalsSpy.mockRejectedValueOnce(new UnmappedError(new Error()));
+
+      const response = await request(app.server).get(
+        '/budgets/goals?referenceMonth=11/24',
       );
 
       expect(response.status).toBe(500);

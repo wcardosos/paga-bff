@@ -15,6 +15,7 @@ import {
 } from '@/app/entities/expense';
 import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
 import { UnmappedError } from '@/app/errors/unmapped';
+import { Goal } from '@/app/entities/goal';
 
 export class GoogleSheetsBudgetRepository implements BudgetRepository {
   private readonly sheetsConnection: sheets_v4.Sheets;
@@ -67,6 +68,7 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
   ): Promise<BudgetSummary | null> {
     const response = await this.fetchValuesFromRange(
       `${referenceMonth.value}!B1:B6`,
+      'Summary',
     );
 
     const { values } = response.data;
@@ -97,11 +99,12 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
   }
 
   async getExpenses(referenceMonth: ReferenceMonth): Promise<Expense[]> {
-    const descriptionsResponse = await this.fetchValuesFromRange(
+    const expensesResponse = await this.fetchValuesFromRange(
       `${referenceMonth.value}!D2:I`,
+      'Expenses',
     );
 
-    const { values } = descriptionsResponse.data;
+    const { values } = expensesResponse.data;
 
     const expenses = values?.map(
       ([description, amount, dueDay, status, category]) => {
@@ -118,6 +121,28 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     return expenses || [];
   }
 
+  async getGoals(referenceMonth: ReferenceMonth): Promise<Goal[]> {
+    const goalsResponse = await this.fetchValuesFromRange(
+      `${referenceMonth.value}!J3:M`,
+      'Goals',
+    );
+
+    const { values } = goalsResponse.data;
+
+    const goals = values?.map(([category, amount, currentAmount, progress]) => {
+      return Goal.create({
+        category,
+        amount: amount ? parseFloat(amount.replace(',', '.')) : 0,
+        currentAmount: currentAmount
+          ? parseFloat(currentAmount.replace(',', '.'))
+          : 0,
+        progress: progress ? parseFloat(progress.replace(',', '.')) : 0,
+      });
+    });
+
+    return goals || [];
+  }
+
   private async getSpreadsheet() {
     const response = await this.sheetsConnection.spreadsheets.get({
       spreadsheetId: env.GOOGLE_SHEET_ID,
@@ -126,7 +151,7 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     return response.data;
   }
 
-  private async fetchValuesFromRange(range: string) {
+  private async fetchValuesFromRange(range: string, context: string) {
     try {
       return await this.sheetsConnection.spreadsheets.values.get({
         spreadsheetId: env.GOOGLE_SHEET_ID,
@@ -138,7 +163,7 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
       );
 
       if (errorType === 'RANGE_NOT_FOUND') {
-        throw new ResourceNotFoundError('Summary');
+        throw new ResourceNotFoundError(context);
       } else {
         throw new UnmappedError(error);
       }

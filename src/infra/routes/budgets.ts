@@ -4,6 +4,7 @@ import { GoogleSheetsBudgetRepository } from '../repositories/google-sheets-budg
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FetchBudgetSummary } from '@/app/services/budget/fetch-budget-summary';
 import { FetchBudgetExpenses } from '@/app/services/budget/fetch-budget-expenses';
+import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goals';
 
 export function budgetsRoutes(app: FastifyInstance) {
   const budgetRepository = new GoogleSheetsBudgetRepository();
@@ -47,6 +48,25 @@ export function budgetsRoutes(app: FastifyInstance) {
       const expenses = await fetchBudgetExpenses.execute(referenceMonth);
 
       return expenses.map((expense) => expense.map());
+    },
+  );
+
+  app.get(
+    '/budgets/goals',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const { referenceMonth } = req.query as { referenceMonth: string };
+
+      if (!referenceMonth) {
+        return reply.status(400).send('Reference month must be provided');
+      }
+
+      const fetchBudgetGoalsService = new FetchBudgetGoalsService(
+        budgetRepository,
+      );
+
+      const goals = await fetchBudgetGoalsService.execute(referenceMonth);
+
+      return goals.map((expense) => expense.map());
     },
   );
 }

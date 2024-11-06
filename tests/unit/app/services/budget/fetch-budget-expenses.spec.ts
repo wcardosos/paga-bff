@@ -8,21 +8,21 @@ describe('FetchBudgetExpenses', () => {
   const budgetRepository = makeBudgetRepository();
 
   describe('execute', () => {
-    it('should return the budget summary', async () => {
+    it('should return the budget expenses', async () => {
       (budgetRepository.getExpenses as Mock).mockResolvedValue([
         Expense.create({
           description: 'Netflix',
           amount: 30,
           dueDay: 10,
-          status: 'Não pago',
-          category: 'Lazer',
+          status: 'unpaid',
+          category: 'leisure',
         }),
         Expense.create({
           description: 'Aluguel',
           amount: 1000,
           dueDay: 10,
-          status: 'Não pago',
-          category: 'Essencial',
+          status: 'unpaid',
+          category: 'essential',
         }),
       ]);
 
