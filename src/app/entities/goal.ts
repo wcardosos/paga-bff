@@ -1,8 +1,8 @@
 import { Entity } from './entity';
-import { ExpenseCategory } from './expense';
+import { CategoryValue } from './value-objects/category';
 
 interface GoalProps {
-  category: ExpenseCategory;
+  category: CategoryValue | null;
   amount: number;
   currentAmount: number;
   progress: number;

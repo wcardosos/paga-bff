@@ -1,14 +1,14 @@
 import { Entity } from './entity';
+import { CategoryValue } from './value-objects/category';
 
 export type ExpenseStatus = 'paid' | 'unpaid' | 'separated';
-export type ExpenseCategory = 'essential' | 'leisure' | 'investments';
 
 interface ExpenseProps {
   description: string;
   amount: number;
   dueDay: number | null;
   status: ExpenseStatus | null;
-  category: ExpenseCategory | null;
+  category: CategoryValue | null;
 }
 
 export class Expense extends Entity<ExpenseProps> {

@@ -8,14 +8,11 @@ import { ReferenceMonth } from '@/app/entities/reference-month';
 import { BudgetRepository } from '@/app/repositories/budget.repository';
 import { google, sheets_v4 } from 'googleapis';
 import { env } from '@/infra/config/env';
-import {
-  Expense,
-  ExpenseCategory,
-  ExpenseStatus,
-} from '@/app/entities/expense';
+import { Expense, ExpenseStatus } from '@/app/entities/expense';
 import { ResourceNotFoundError } from '@/app/errors/resource-not-found';
 import { UnmappedError } from '@/app/errors/unmapped';
 import { Goal } from '@/app/entities/goal';
+import { Category } from '@/app/entities/value-objects/category';
 
 export class GoogleSheetsBudgetRepository implements BudgetRepository {
   private readonly sheetsConnection: sheets_v4.Sheets;
@@ -24,12 +21,6 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     Pago: 'paid',
     'Não pago': 'unpaid',
     Separado: 'separated',
-  };
-
-  private readonly EXPENSE_CATEGORY_MAPPING: Record<string, ExpenseCategory> = {
-    Lazer: 'leisure',
-    Essencial: 'essential',
-    Investimentos: 'investments',
   };
 
   constructor() {
@@ -110,10 +101,10 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
       ([description, amount, dueDay, status, category]) => {
         return Expense.create({
           description: description as string,
-          amount: amount ? parseFloat(amount.replace(',', '.')) : 0,
+          amount: this.parseNumber(amount),
           dueDay: Number(dueDay) || null,
           status: this.parseStatus(status),
-          category: this.parseCategory(category),
+          category: Category.from(category).value,
         });
       },
     );
@@ -131,12 +122,10 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
 
     const goals = values?.map(([category, amount, currentAmount, progress]) => {
       return Goal.create({
-        category,
-        amount: amount ? parseFloat(amount.replace(',', '.')) : 0,
-        currentAmount: currentAmount
-          ? parseFloat(currentAmount.replace(',', '.'))
-          : 0,
-        progress: progress ? parseFloat(progress.replace(',', '.')) : 0,
+        category: Category.from(category).value,
+        amount: this.parseNumber(amount),
+        currentAmount: this.parseNumber(currentAmount),
+        progress: this.parseNumber(progress),
       });
     });
 
@@ -190,21 +179,21 @@ export class GoogleSheetsBudgetRepository implements BudgetRepository {
     }
 
     return {
-      income: rawIncome ? parseFloat(rawIncome.replace(',', '.')) : 0,
-      expenses: rawExpenses ? parseFloat(rawExpenses.replace(',', '.')) : 0,
-      balance: rawBalance ? parseFloat(rawBalance.replace(',', '.')) : 0,
-      paid: rawPaid ? parseFloat(rawPaid.replace(',', '.')) : 0,
-      unpaid: rawUnpaid ? parseFloat(rawUnpaid.replace(',', '.')) : 0,
-      separated: rawSeparated ? parseFloat(rawSeparated.replace(',', '.')) : 0,
+      income: this.parseNumber(rawIncome),
+      expenses: this.parseNumber(rawExpenses),
+      balance: this.parseNumber(rawBalance),
+      paid: this.parseNumber(rawPaid),
+      unpaid: this.parseNumber(rawUnpaid),
+      separated: this.parseNumber(rawSeparated),
     };
+  }
+
+  private parseNumber(number: string): number {
+    return number ? parseFloat(number.replace(',', '.')) : 0;
   }
 
   private parseStatus(status: string): ExpenseStatus | null {
     return this.EXPENSE_STATUS_MAPPING[status] || null;
-  }
-
-  private parseCategory(category: string): ExpenseCategory | null {
-    return this.EXPENSE_CATEGORY_MAPPING[category] || null;
   }
 
   private parseErrorMessage(errorMessage: string): 'RANGE_NOT_FOUND' | null {
