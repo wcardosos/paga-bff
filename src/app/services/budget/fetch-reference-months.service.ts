@@ -1,6 +1,6 @@
 import { BudgetRepository } from '@/app/repositories/budget.repository';
 
-export class FetchReferenceMonths {
+export class FetchReferenceMonthsService {
   constructor(private readonly budgetRepository: BudgetRepository) {}
 
   async execute(): Promise<string[]> {

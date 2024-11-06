@@ -1,10 +1,10 @@
 import { Mock } from 'vitest';
 import { BudgetSummary } from '@/app/entities/budget-summary';
-import { FetchBudgetSummary } from '@/app/services/budget/fetch-budget-summary';
+import { FetchBudgetSummaryService } from '@/app/services/budget/fetch-budget-summary.service';
 import { ReferenceMonth } from '@/app/entities/reference-month';
 import { makeBudgetRepository } from 'tests/factories/budget';
 
-describe('FetchBudgetSummary', () => {
+describe('FetchBudgetSummaryService', () => {
   const budgetRepository = makeBudgetRepository();
 
   describe('execute', () => {
@@ -19,7 +19,7 @@ describe('FetchBudgetSummary', () => {
           separated: 200,
         }),
       );
-      const sut = new FetchBudgetSummary(budgetRepository);
+      const sut = new FetchBudgetSummaryService(budgetRepository);
       const result = await sut.execute('10/24');
       expect(result.map()).toStrictEqual({
         income: 1440,
@@ -37,7 +37,7 @@ describe('FetchBudgetSummary', () => {
 
     it('should throw an error when repository return is null', async () => {
       (budgetRepository.getSummary as Mock).mockResolvedValue(null);
-      const sut = new FetchBudgetSummary(budgetRepository);
+      const sut = new FetchBudgetSummaryService(budgetRepository);
 
       await expect(sut.execute('10/24')).rejects.toThrow(
         'Unable to get budget summary',

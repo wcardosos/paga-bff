@@ -1,6 +1,6 @@
 import { Goal } from '@/app/entities/goal';
 import { ReferenceMonth } from '@/app/entities/reference-month';
-import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goals';
+import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goals.service';
 import { makeBudgetRepository } from 'tests/factories/budget';
 import { Mock } from 'vitest';
 

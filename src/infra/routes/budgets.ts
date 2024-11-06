@@ -1,18 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FetchReferenceMonths } from '@/app/services/budget/fetch-reference-months';
+import { FetchReferenceMonthsService } from '@/app/services/budget/fetch-reference-months.service';
 import { GoogleSheetsBudgetRepository } from '../repositories/google-sheets-budget.repository';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { FetchBudgetSummary } from '@/app/services/budget/fetch-budget-summary';
-import { FetchBudgetExpenses } from '@/app/services/budget/fetch-budget-expenses';
-import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goals';
+import { FetchBudgetSummaryService } from '@/app/services/budget/fetch-budget-summary.service';
+import { FetchBudgetExpensesService } from '@/app/services/budget/fetch-budget-expenses.service';
+import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goals.service';
 
 export function budgetsRoutes(app: FastifyInstance) {
   const budgetRepository = new GoogleSheetsBudgetRepository();
 
   app.get('/budgets/reference-months', async () => {
-    const fetchReferenceMonths = new FetchReferenceMonths(budgetRepository);
+    const fetchReferenceMonthsService = new FetchReferenceMonthsService(
+      budgetRepository,
+    );
 
-    const referenceMonths = await fetchReferenceMonths.execute();
+    const referenceMonths = await fetchReferenceMonthsService.execute();
 
     return referenceMonths;
   });
@@ -26,9 +28,12 @@ export function budgetsRoutes(app: FastifyInstance) {
         return reply.status(400).send('Reference month must be provided');
       }
 
-      const fetchBudgetSummary = new FetchBudgetSummary(budgetRepository);
+      const fetchBudgetSummaryService = new FetchBudgetSummaryService(
+        budgetRepository,
+      );
 
-      const budgetSummary = await fetchBudgetSummary.execute(referenceMonth);
+      const budgetSummary =
+        await fetchBudgetSummaryService.execute(referenceMonth);
 
       return budgetSummary.map();
     },
@@ -43,9 +48,11 @@ export function budgetsRoutes(app: FastifyInstance) {
         return reply.status(400).send('Reference month must be provided');
       }
 
-      const fetchBudgetExpenses = new FetchBudgetExpenses(budgetRepository);
+      const fetchBudgetExpensesService = new FetchBudgetExpensesService(
+        budgetRepository,
+      );
 
-      const expenses = await fetchBudgetExpenses.execute(referenceMonth);
+      const expenses = await fetchBudgetExpensesService.execute(referenceMonth);
 
       return expenses.map((expense) => expense.map());
     },

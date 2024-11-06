@@ -1,9 +1,9 @@
 import { ReferenceMonth } from '@/app/entities/reference-month';
-import { FetchReferenceMonths } from '@/app/services/budget/fetch-reference-months';
+import { FetchReferenceMonthsService } from '@/app/services/budget/fetch-reference-months.service';
 import { makeBudgetRepository } from 'tests/factories/budget';
 import { Mock } from 'vitest';
 
-describe('FetchReferenceMonths', () => {
+describe('FetchReferenceMonthsService', () => {
   const budgetRepository = makeBudgetRepository();
 
   describe('execute', () => {
@@ -14,7 +14,7 @@ describe('FetchReferenceMonths', () => {
         ReferenceMonth.create({ value: '12/24' }),
       ]);
 
-      const sut = new FetchReferenceMonths(budgetRepository);
+      const sut = new FetchReferenceMonthsService(budgetRepository);
 
       const referenceMonth = await sut.execute();
 

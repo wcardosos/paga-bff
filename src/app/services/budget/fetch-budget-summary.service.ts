@@ -2,7 +2,7 @@ import { BudgetRepository } from '@/app/repositories/budget.repository';
 import { ReferenceMonth } from '@/app/entities/reference-month';
 import { BudgetSummary } from '@/app/entities/budget-summary';
 
-export class FetchBudgetSummary {
+export class FetchBudgetSummaryService {
   constructor(private readonly budgetRepository: BudgetRepository) {}
 
   async execute(plainReferenceMonth: string): Promise<BudgetSummary> {

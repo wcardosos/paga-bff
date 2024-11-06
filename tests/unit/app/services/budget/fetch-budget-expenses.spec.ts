@@ -1,10 +1,10 @@
 import { Mock } from 'vitest';
-import { FetchBudgetExpenses } from '@/app/services/budget/fetch-budget-expenses';
+import { FetchBudgetExpensesService } from '@/app/services/budget/fetch-budget-expenses.service';
 import { ReferenceMonth } from '@/app/entities/reference-month';
 import { makeBudgetRepository } from 'tests/factories/budget';
 import { Expense } from '@/app/entities/expense';
 
-describe('FetchBudgetExpenses', () => {
+describe('FetchBudgetExpensesService', () => {
   const budgetRepository = makeBudgetRepository();
 
   describe('execute', () => {
@@ -26,7 +26,7 @@ describe('FetchBudgetExpenses', () => {
         }),
       ]);
 
-      const sut = new FetchBudgetExpenses(budgetRepository);
+      const sut = new FetchBudgetExpensesService(budgetRepository);
       const result = await sut.execute('10/24');
 
       expect(result).toHaveLength(2);
