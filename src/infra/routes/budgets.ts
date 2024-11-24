@@ -9,18 +9,23 @@ import { FetchBudgetGoalsService } from '@/app/services/budget/fetch-budget-goal
 export function budgetsRoutes(app: FastifyInstance) {
   const budgetRepository = new GoogleSheetsBudgetRepository();
 
-  app.get('/budgets/reference-months', async () => {
-    const fetchReferenceMonthsService = new FetchReferenceMonthsService(
-      budgetRepository,
-    );
+  app.get(
+    '/budgets/reference-months',
+    { onRequest: [app.authenticate] },
+    async () => {
+      const fetchReferenceMonthsService = new FetchReferenceMonthsService(
+        budgetRepository,
+      );
 
-    const referenceMonths = await fetchReferenceMonthsService.execute();
+      const referenceMonths = await fetchReferenceMonthsService.execute();
 
-    return referenceMonths;
-  });
+      return referenceMonths;
+    },
+  );
 
   app.get(
     '/budgets/summary',
+    { onRequest: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { referenceMonth } = req.query as { referenceMonth: string };
 
@@ -41,6 +46,7 @@ export function budgetsRoutes(app: FastifyInstance) {
 
   app.get(
     '/budgets/expenses',
+    { onRequest: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { referenceMonth } = req.query as { referenceMonth: string };
 
@@ -60,6 +66,7 @@ export function budgetsRoutes(app: FastifyInstance) {
 
   app.get(
     '/budgets/goals',
+    { onRequest: [app.authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { referenceMonth } = req.query as { referenceMonth: string };
 

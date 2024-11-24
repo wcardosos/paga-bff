@@ -7,8 +7,15 @@ import { UnmappedError } from '@/app/errors/unmapped';
 import request from 'supertest';
 import { makeExpense } from 'tests/factories/expense';
 import { makeGoal } from 'tests/factories/goal';
+import { createJwtToken } from 'tests/utils';
 
 describe('/budgets', () => {
+  let jwtToken: string;
+
+  beforeAll(async () => {
+    jwtToken = await createJwtToken();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -26,7 +33,10 @@ describe('/budgets', () => {
 
     getReferenceMonthsSpy.mockResolvedValueOnce(referenceMonths);
 
-    const response = await request(app.server).get('/budgets/reference-months');
+    console.log('jwt token: ', jwtToken);
+    const response = await request(app.server)
+      .get('/budgets/reference-months')
+      .set('Authorization', `Bearer ${jwtToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
@@ -41,7 +51,9 @@ describe('/budgets', () => {
     );
 
     test('return status 400 when referenceMonth is not provided', async () => {
-      const response = await request(app.server).get('/budgets/summary');
+      const response = await request(app.server)
+        .get('/budgets/summary')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(400);
       expect(response.text).toBe('Reference month must be provided');
@@ -52,9 +64,9 @@ describe('/budgets', () => {
 
       getSummarySpy.mockResolvedValueOnce(budgetSummary);
 
-      const response = await request(app.server).get(
-        '/budgets/summary?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/summary?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual(budgetSummary.map());
@@ -63,9 +75,9 @@ describe('/budgets', () => {
     test('should return 404 when repository not found summary', async () => {
       getSummarySpy.mockRejectedValueOnce(new ResourceNotFoundError('Summary'));
 
-      const response = await request(app.server).get(
-        '/budgets/summary?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/summary?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(404);
       expect(response.text).toBe('Summary not found');
@@ -74,9 +86,9 @@ describe('/budgets', () => {
     test('should return 500 when unmapped error is thrown', async () => {
       getSummarySpy.mockRejectedValueOnce(new UnmappedError(new Error()));
 
-      const response = await request(app.server).get(
-        '/budgets/summary?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/summary?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(500);
       expect(response.text).toBe('Unmapped error: Error');
@@ -90,7 +102,9 @@ describe('/budgets', () => {
     );
 
     test('return status 400 when referenceMonth is not provided', async () => {
-      const response = await request(app.server).get('/budgets/expenses');
+      const response = await request(app.server)
+        .get('/budgets/expenses')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(400);
       expect(response.text).toBe('Reference month must be provided');
@@ -101,9 +115,9 @@ describe('/budgets', () => {
 
       getExpensesSpy.mockResolvedValueOnce(expenses);
 
-      const response = await request(app.server).get(
-        '/budgets/expenses?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/expenses?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual(
@@ -116,9 +130,9 @@ describe('/budgets', () => {
         new ResourceNotFoundError('Expenses'),
       );
 
-      const response = await request(app.server).get(
-        '/budgets/expenses?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/expenses?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(404);
       expect(response.text).toBe('Expenses not found');
@@ -127,9 +141,9 @@ describe('/budgets', () => {
     test('should return 500 when unmapped error is thrown', async () => {
       getExpensesSpy.mockRejectedValueOnce(new UnmappedError(new Error()));
 
-      const response = await request(app.server).get(
-        '/budgets/expenses?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/expenses?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(500);
       expect(response.text).toBe('Unmapped error: Error');
@@ -143,7 +157,9 @@ describe('/budgets', () => {
     );
 
     test('return status 400 when referenceMonth is not provided', async () => {
-      const response = await request(app.server).get('/budgets/goals');
+      const response = await request(app.server)
+        .get('/budgets/goals')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(400);
       expect(response.text).toBe('Reference month must be provided');
@@ -154,9 +170,9 @@ describe('/budgets', () => {
 
       getGoalsSpy.mockResolvedValueOnce(goals);
 
-      const response = await request(app.server).get(
-        '/budgets/goals?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/goals?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual(goals.map((goal) => goal.map()));
@@ -165,9 +181,9 @@ describe('/budgets', () => {
     test('should return 404 when repository not found goals', async () => {
       getGoalsSpy.mockRejectedValueOnce(new ResourceNotFoundError('Goals'));
 
-      const response = await request(app.server).get(
-        '/budgets/goals?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/goals?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(404);
       expect(response.text).toBe('Goals not found');
@@ -176,9 +192,9 @@ describe('/budgets', () => {
     test('should return 500 when unmapped error is thrown', async () => {
       getGoalsSpy.mockRejectedValueOnce(new UnmappedError(new Error()));
 
-      const response = await request(app.server).get(
-        '/budgets/goals?referenceMonth=11/24',
-      );
+      const response = await request(app.server)
+        .get('/budgets/goals?referenceMonth=11/24')
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(500);
       expect(response.text).toBe('Unmapped error: Error');
