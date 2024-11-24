@@ -8,6 +8,9 @@ const envSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string(),
   GOOGLE_PRIVATE_KEY: z.string(),
   GOOGLE_SHEET_ID: z.string(),
+  ACCESS_USERNAME: z.string(),
+  ACCESS_PASSWORD: z.string(),
+  JWT_SECRET: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
