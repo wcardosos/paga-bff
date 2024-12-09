@@ -8,6 +8,7 @@ import { authRoutes } from './routes/auth';
 import { UnauthorizedError } from '@/app/errors/unauthorized';
 import { env } from './config/env';
 import { jwtMiddleware } from './middlewares/jwt';
+import { healthRoutes } from './routes/health';
 
 const app = Fastify({
   logger: true,
@@ -35,5 +36,6 @@ app.setErrorHandler(async (error, request, reply) => {
 app.register(welcomeRoutes);
 app.register(budgetsRoutes);
 app.register(authRoutes);
+app.register(healthRoutes);
 
 export { app };
