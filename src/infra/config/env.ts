@@ -7,7 +7,7 @@ const envSchema = z.object({
   HOST: z.string().default('localhost'),
   PORT: z.coerce.number().default(3333),
   GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string(),
-  GOOGLE_PRIVATE_KEY: z.string(),
+  GOOGLE_PRIVATE_KEY: z.string().base64(),
   GOOGLE_SHEET_ID: z.string(),
   ACCESS_USERNAME: z.string(),
   ACCESS_PASSWORD: z.string(),
@@ -22,4 +22,10 @@ if (!parsedEnv.success) {
   throw new Error('Invalid environment');
 }
 
-export const env = parsedEnv.data;
+export const env: z.infer<typeof envSchema> = {
+  ...parsedEnv.data,
+  GOOGLE_PRIVATE_KEY: Buffer.from(
+    parsedEnv.data.GOOGLE_PRIVATE_KEY,
+    'base64',
+  ).toString(),
+};
