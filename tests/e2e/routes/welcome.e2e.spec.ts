@@ -6,6 +6,6 @@ describe('/welcome', () => {
     const response = await request(app.server).get('/welcome');
 
     expect(response.status).toBe(200);
-    expect(response.text).toBe('Welcome to Paguei BFF!');
+    expect(response.text).toBe('Welcome to Paga BFF API!');
   });
 });

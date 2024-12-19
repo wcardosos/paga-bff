@@ -7,7 +7,7 @@ describe('WelcomeService', () => {
 
       const welcome = sut.execute();
 
-      expect(welcome.message).toBe('Welcome to Paguei BFF!');
+      expect(welcome.message).toBe('Welcome to Paga BFF API!');
     });
   });
 });
